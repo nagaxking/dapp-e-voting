@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Voting System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(to bottom, rgba(0, 51, 102, 0.8), rgba(0, 51, 102, 0.9)), 
+                        url("{{ url_for('static', filename='bg.webp') }}") no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Roboto', sans-serif;
+            color: #ffffff;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-weight: 700;
+            color: #f2f2f2;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #003366;
+            color: white;
+            text-transform: uppercase;
+            font-weight: 600;
+            padding: 15px;
+            border-bottom: 2px solid #0056b3;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            font-size: 1.1rem;
+            padding: 12px 24px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.5);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.7);
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            font-size: 1.1rem;
+            padding: 12px 24px;
+            border-radius: 30px;
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .form-select {
+            padding: 12px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            border: 2px solid #dee2e6;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #333333;
+        }
+        .alert-info {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #333333;
+            border: none;
+            font-size: 1rem;
+        }
+        #walletAddress {
+            font-size: 1.2rem;
+            color: #fff;
+            font-weight: bold;
+            word-break: break-word;
+        }
+        .wrapper {
+          padding: 20px 0;
+        }
+        .grid {
+          .grid__inner {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -13px;
+          }
+          .grid__item {
+            width: 50%;
+            padding: 13px;
+          }
+        }
+        .count {
+          min-height: 108px;
+          position: relative;
+          padding: 15px 0;
+          cursor: pointer;
+          border: 1px solid #d0cfcf;
+          border-radius: 6px;
+          background-color: #fff;
+          -webkit-tap-highlight-color:rgba(0,0,0,0);
+          &.count--screen {
+            cursor: default;
+          }
+        }
+        .count__name {
+          display: block;
+          position: relative;
+          margin-top: 10px;
+          margin-bottom: 0;
+          line-height: 1;
+          text-align: center;
+          font-size: 1rem;
+          font-weight: bold;
+        }
+        .count__num {
+          margin-top: 10px;
+          margin-bottom: 0;
+          line-height: 1;
+          color: #2196f5;
+          text-align: center;
+          font-size: 1.5rem;
+          font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-5">E-Voting System</h1>
+
+        <!-- Wallet Connection Section -->
+        <div class="mb-4 text-center">
+            <button id="connectWalletButton" class="btn btn-primary btn-lg">Connect Wallet</button>
+            <a id="adminLink" href="/admin" class="btn btn-primary btn-lg d-none">Admin</a>
+            <button id="disconnectWalletButton" class="btn btn-danger btn-lg d-none">Disconnect Wallet</button>
+            <p id="walletAddress" class="mt-3 d-none">Connected Address: <span id="addressDisplay"></span></p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="alert alert-danger d-none"></div>
+
+        <!-- Candidate List and Voting Section -->
+        <div class="card mb-4">
+            <div class="card-header">Vote for a Candidate</div>
+            <div class="card-body">
+                <div class="alert alert-info" id="pool_time">Voting Ends: 5:00 PM, 30th September</div>
+                <form id="voteForm">
+                    <div class="mb-3">
+                        <label for="candidateSelect" class="form-label p-3">Choose a Candidate</label>
+                        <select class="form-select" id="candidateSelect" required>
+                            <!-- Candidates will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Submit Vote</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Result Section -->
+        <div class="card mb-4">
+            <div class="card-header">Election Result</div>
+            <div class="card-body">
+                <div class="alert alert-info" id="result_time">Result Declaration: 6:00 PM, 30th September</div>
+                <button class="btn btn-success btn-lg w-100 mb-3" id="getResultBtn">Get Result</button>
+                <div class="wrapper d-none" id="result">
+                  <div class="l-container">
+                    <div class="grid">
+                      <div class="grid__inner">
+                        <div class="grid__item">
+                          <div class="js-post count count--screen" data-initial="hatsushi">
+                            <p class="count__name js-name-hatsushi">Winner Name :</p>
+                            <p class="count__num js-count js-count-hatsushi" id="winnerId">0</p>
+                          </div>
+                        </div>
+                        <div class="grid__item">
+                          <div class="js-post count count--screen" data-initial="masakuni">
+                            <p class="count__name js-name-masakuni">Total Votes :</p>
+                            <p class="count__num js-count js-count-masakuni" id="totalVotes">0</p>
+                          </div>
+                        </div>
+                        <div class="grid__item">
+                          <div class="js-post count count--screen" data-initial="tk">
+                            <p class="count__name js-name-tk">Winner Votes :</p>
+                            <p class="count__num js-count js-count-tk" id="winnerVotes">0</p>
+                          </div>
+                        </div>
+                        <div class="grid__item">
+                          <div class="js-post count count--screen" data-initial="kaz">
+                            <p class="count__name js-name-kaz">Percentage :</p>
+                            <p class="count__num js-count js-count-kaz"><span id="percentage">0</span> %</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- <div id="result" class="alert alert-info d-none">
+                    <div class="d-flex justify-content-between"><strong>Winner Name :</strong><span id="winnerId"></span></div>
+                    <div class="d-flex justify-content-between"><strong>Total Votes :</strong><span id="totalVotes"></span></div>
+                    <div class="d-flex justify-content-between"><strong>Winner Votes :</strong><span id="winnerVotes"></span></div>
+                    <div class="d-flex justify-content-between"><strong>Percentage :</strong><span><span id="percentage"></span>%</span></div>
+                </div> -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Web3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+    <script src="{{ url_for('static', filename='js/contracts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dapp.js') }}"></script>
+</body>
+</html>
